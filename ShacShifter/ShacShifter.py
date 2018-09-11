@@ -29,6 +29,7 @@ class ShacShifter:
         if (format == "jekyll-rdf"):
             writer = JekyllRDFSerializer(parseResult, output)
         elif (format == "rdforms"):
-            writer = RDFormsSerializer()
+            writer = RDFormsSerializer(parseResult, output)
+            writer.write()
         else:
             writer = None
