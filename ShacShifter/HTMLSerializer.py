@@ -1,94 +1,272 @@
+from .modules.NodeShape import NodeShape
+from .modules.PropertyShape import PropertyShape
+from .ShapeParser import ShapeParser
 import logging
 
 
-# example class for
+class HTMLPart:
+    """A super class that provides some methods."""
+    def __str__(self):
+        """Print HTMLFormTemplate object."""
+        return ', '.join(['%s: %s' % (key, value) for (key, value) in self.__dict__.items()])
+
+    def toHTML(self):
+        # TODO consider BeautifulSoup for indention
+        return self.htmlRepr()
+
+    def htmlRepr(self):
+        """Build HTML"""
+        pass
+
+
+class HTMLForm(HTMLPart):
+    """The HTMLForm template bundle class."""
+
+    def __init__(self):
+        """Initialize an HTMLFormTemplateBundle object."""
+        self.label = ''
+        self.description = {}
+        self.root = ''
+        self.formItems = []
+
+    def __str__(self):
+        """Print HTMLFormTemplate object."""
+        printdict = {}
+        for key, value in self.__dict__.items():
+            if key == 'formItems':
+                printdict[key] = [str(template) for template in value]
+            else:
+                printdict[key] = value
+        return ', '.join(['%s: %s' % (key, value) for (key, value) in printdict.items()])
+
+    def htmlRepr(self):
+        """Build HTML"""
+        pass
+
+
+class HTMLFormTemplate(HTMLPart):
+    """The HTMLForm template (super)class."""
+
+    def __init__(self):
+        """Initialize an HTMLFormTemplate object."""
+        self.id = ''
+        self.label = ''
+        self.description = {}
+        self.property = ''
+        self.cardinality = {'min': 0, 'pref': 0}
+
+    def htmlRepr(self):
+        """Build HTML"""
+        pass
+
+
+class HTMLFormGroupItem(HTMLFormTemplate):
+    """A template item of type "group"."""
+
+    def __init__(self):
+        """Initialize an HTMLFormGrouptItem object."""
+        super().__init__()
+        self.type = 'group'
+        self.constraints = {}
+        self.nodetype = ''
+        self.items = []
+
+    def htmlRepr(self):
+        """Build HTML"""
+        pass
+
+
+class HTMLFormTextItem(HTMLFormTemplate):
+    """A template item of type "group"."""
+
+    def __init__(self):
+        """Initialize an HTMLFormTextItem object."""
+        super().__init__()
+        self.cardinality = {'min': 0, 'pref': 1}
+        self.type = 'text'
+        self.nodetype = ''
+
+    def htmlRepr(self):
+        """Build HTML"""
+        pass
+
+
+class HTMLFormChoiceItem(HTMLFormTemplate):
+    """A template item of type "group"."""
+
+    def __init__(self):
+        """Initialize an HTMLFormChoiceItem object."""
+        super().__init__()
+        self.type = 'choice'
+        self.constraints = {}
+        self.nodetype = ''
+        self.choices = []
+
+    def __str__(self):
+        """Print HTMLFormChoiceItem object."""
+        printdict = {}
+        for key, value in self.__dict__.items():
+            if key == 'choices':
+                printdict[key] = [str(choice) for choice in value]
+        return ', '.join(['%s: %s' % (key, value) for (key, value) in printdict.items()])
+
+    def htmlRepr(self):
+        """Build HTML"""
+        pass
+
+
+class HTMLFormChoiceExpression(HTMLPart):
+    """A class for choice expressions."""
+
+    def __init__(self):
+        """Initialize an HTMLFormChoiceExpression object."""
+        self.value = ''
+        self.label = ''
+        self.description = ''
+        self.selectable = True
+
+    def __str__(self):
+        """Print HTMLFormChoiceExpression object."""
+        printdict = {}
+        for key, value in self.__dict__.items():
+            if key == 'children':
+                printdict[key] = [str(child) for child in value]
+            else:
+                printdict[key] = value
+        return ', '.join(['%s: %s' % (key, value) for (key, value) in printdict.items()])
+
+    def htmlRepr(self):
+        """Build HTML"""
+        pass
+
+
 class HTMLSerializer:
     """A Serializer that writes HTML."""
 
     logger = logging.getLogger('ShacShifter.HTMLSerializer')
-    content = []
-    outputfile = ''
+    forms = []
+    outputfile = None
 
-    def __init__(self, nodeShapes, outputfile):
+    def __init__(self, nodeShapes, outputfile=None):
+        """Initialize the Serializer and parse des ShapeParser results.
+
+        args: shapes
+              string outputfile
+        """
         try:
             fp = open(outputfile, 'w')
             self.outputfile = outputfile
-            fp.close
+            fp.close()
         except Exception:
-            raise Exception('Can''t write to file {}'.format(outputfile))
+            self.logger.error('Can''t write to file {}'.format(outputfile))
+            self.logger.error('Content will be printed to sys.')
 
-        self.content.append('<html> <body>\n')
-        self.logger.debug(nodeShapes)
         for nodeShape in nodeShapes:
-            self.nodeShapeEvaluation(nodeShapes[nodeShape], fp)
-        self.content.append('</body></html>')
-        self.saveToFile()
+            form = self.createForm(nodeShapes[nodeShape])
+            self.forms.append(form)
 
-    def saveToFile(self):
-        fp = open(self.outputfile, 'w')
-        fp.write(''.join(self.content))
-        fp.close
+    def write(self):
+        """Write HTMLForm to file or sysout."""
+        if self.outputfile:
+            fp = open(self.outputfile, 'w')
+            for form in self.forms:
+                htmlForm = form.toHTML()
+                print(htmlForm)
+                fp.write(htmlForm + '\n')
+            fp.close()
+        else:
+            for form in self.forms:
+                print(form.toHTML())
 
-    def nodeShapeEvaluation(self, nodeShape, fp):
+    def createForm(self, nodeShape):
         """Evaluate a nodeShape.
 
-        args:   nodeShape a nodeShape object
-                fp
+        args:   NodeShape nodeShape
         """
-        self.content.append("<form >\n")
-        self.logger.debug(
-            'This Resource needs to be in the following classes'
-            + '(can be used through rdfa annotation?):'
-            )
+        def addNodeLabel():
+            label = 'Template: ' + nodeShape.uri
+            if nodeShape.isSet['targetClass']:
+                label = 'Create new Instance of: ' + ', '.join(nodeShape.targetClass)
+            if nodeShape.isSet['targetNode']:
+                label = 'Edit Instance of: ' + ', '.join(nodeShape.targetNode)
+            if nodeShape.isSet['targetObjectsOf']:
+                label = ', '.join(nodeShape.targetObjectsOf)
+            if nodeShape.isSet['targetSubjectsOf']:
+                label = 'Edit: '', '.join(nodeShape.targetSubjectsOf)
+            return label
 
-        if len(nodeShape.targetClass) > 1:
-            self.content.append("<p>Create new resource</p><br>")
-            self.content.append("<fieldset>Type<br>")
+        def addFormItems():
+            """Check Propertey Shapes to fill the templates."""
+            addFormObjects = []
+            for propertyShape in nodeShape.properties:
+                formObject = self.getFormItem(propertyShape, nodeShape.nodeKind)
+                if formItem is not None:
+                    formItems.append(formItem)
+            return formItem
 
-            for tClass in nodeShape.targetClass:
-                self.content.append(
-                    '<input type="radio" name="type" value={type}>{short}</input><br>'.format(
-                        type=tClass, short=tClass.rsplit('/', 1)[-1]))
+        bundle = HTMLFormTemplateBundle()
+        bundle.label = addNodeLabel()
+        if nodeShape.isSet['message']:
+            bundle.description = nodeShape.message
+        bundle.root = nodeShape.uri
+        if len(nodeShape.properties) > 0:
+            bundle.templates = addFormItems()
 
-            self.content.append("</fieldset><br>")
-        elif len(nodeShape.targetClass) == 1:
-            self.content.append("<p>Create new {}</p><br>".format(
-                nodeShape.targetClass[0].rsplit('/', 1)[-1]))
-            self.content.append(
-                '<input type="hidden" name="type" value={type}></input><br>'.format(
-                    type=nodeShape.targetClass[0]))
+        return bundle
 
-        for nodes in nodeShape.targetNode:
-            self.logger.debug(nodes)
-        self.logger.debug(
-            'The following ressources need to be Objects of those predicates'
-            + '(can be used through rdfa annotation?):'
-            )
+    def getFormItem(self, propertyShape, nodeKind):
+        """Evaluate a propertyShape to serialize a formObject section.
 
-        for nodes in nodeShape.targetObjectsOf:
-            self.logger.debug(nodes)
-        self.logger.debug(
-            'The following ressources need to be Subjects of those predicates'
-            + '(can be used through rdfa annotation?):'
-            )
-
-        for nodes in nodeShape.targetSubjectsOf:
-            self.logger.debug(nodes)
-
-        for property in nodeShape.properties:
-            content = self.propertyShapeEvaluation(property, fp)
-            self.content.append(content)
-
-        self.content.append("</form>")
-
-    def propertyShapeEvaluation(self, propertyShape, fp):
-        """Evaluate a propertyShape and return HTML.
-
-        args:   propertyShape a propertyShape object
-                fp
-        return: html string
+        args:   PropertyShape propertyShape
+        return: HTMLFormItem
         """
-        html = ''
+        def initFormItem():
+            if propertyShape.isSet['shIn']:
+                item = fillChoiceItem(HTMLFormChoiceItem())
+            else:
+                item = fillTextItem(HTMLFormTextItem())
+
+            return fillBasicItemValues(item)
+
+        def fillChoiceItem(item):
+            item = fillBasicItemValues(item)
+            item.cardinality = getCardinality()
+            item.choices = self.getChoices(propertyShape)
+            return item
+
+        def fillTextItem(item):
+            item.cardinality = getCardinality()
+            return item
+
+        def fillBasicItemValues(item):
+            item.id = propertyShape.path
+            item.label = propertyShape.name if propertyShape.isSet['name'] else (
+                                    propertyShape.path.rsplit('/', 1)[-1])
+            item.description = getDescription()
+            item.nodetype = nodeKind
+            return item
+
+        def getDescription():
+            if propertyShape.isSet['message']:
+                if 'en' in propertyShape.message:
+                    return propertyShape.message['en']
+                elif 'default' in propertyShape.message:
+                    return propertyShape.message['default']
+            elif propertyShape.isSet['description']:
+                return {'en': propertyShape.description}
+            else:
+                return {'en': 'This is about ' + propertyShape.path}
+
+        def getCardinality():
+            cardinality = {'min': 0, 'pref': 1}
+
+            if propertyShape.isSet['minCount']:
+                cardinality['min'] = propertyShape.minCount
+
+            if propertyShape.isSet['maxCount']:
+                cardinality['max'] = propertyShape.maxCount
+
+            return cardinality
 
         if isinstance(propertyShape.path, dict):
             # TODO handle complex paths (inverse, oneOrMorePath ...)
@@ -97,27 +275,21 @@ class HTMLSerializer:
             # TODO handle sequence paths
             self.logger.info('Sequence path not supported, yet')
         else:
-            label = propertyShape.name \
-                if propertyShape.isSet['name'] else propertyShape.path.rsplit('/', 1)[-1]
+            item = initTemplateItem()
+            return item
 
-            if not propertyShape.isSet['minCount'] and not propertyShape.isSet['maxCount']:
-                html += """{label}:<br>
-                    <input type="text" name="{label}"><br>\n""".format(label=label)
-            else:
-                html += "<fieldset>{}<br>".format(label)
+    def getChoices(self, propertyShape):
+        """Search for choice candidates in propertyShape and return a choice list.
 
-                if propertyShape.isSet['minCount']:
-                    for i in range(0, propertyShape.minCount):
-                        html += """{counter}:<br>
-                            <input type="text" name="{label}[{counter}]"><br>\n""".format(
-                            label=label, counter=str(i+1))
+        args: PropertyShape propertyShape
+        returns: list
+        """
+        choices = []
+        for choice in propertyShape.shIn:
+            choiceItem = HTMLChoiceExpression()
+            choiceItem.label = choice
+            choiceItem.value = choice
+            choiceItem.children = set(propertyShape.shIn) - set([choice])
+            choices.append(choiceItem)
 
-                if propertyShape.isSet['maxCount']:
-                    for i in range(max(propertyShape.minCount, 0), propertyShape.maxCount):
-                        html += """{counter}:<br>
-                            <input type="text" name="{label}[{counter}]"><br>\n""".format(
-                            label=label, counter=str(propertyShape.minCount + i-1))
-
-                html += "</fieldset><br>"
-
-        return html
+        return choices
