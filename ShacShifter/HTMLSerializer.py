@@ -46,6 +46,61 @@ class HTMLForm(HTMLPart):
             plainHTML += item.htmlRepr()
         plainHTML += """<input type="submit" value="Submit">
 </form>"""
+        plainHTML += """
+<script>
+function textfieldAddMax(id) {
+    var ancestor = document.getElementById('id'),
+    descendents = ancestor.getElementsByTagName('div');
+    var i, e;
+    for (i = 0; i < descendents.length; ++i) {
+        e = descendents[i].getElementsbyTagName();
+        if (e[0].type === 'hidden') {
+            e[0].setAttribute('type', 'text');
+            break;
+        }
+    };
+}
+function textfieldAdd(id, label) {
+    var ancestor = document.getElementById('id'),
+    descendents = ancestor.getElementsByTagName('div');
+    var e, d, replacements;
+    counter = descendents.length + 1;
+    replacements = {
+    "%LABEL%": label,
+    "%ID%": id + counter};
+    e = document.createElement('div');
+    e.setAttribute('id', id + counter.toString());
+    d = [
+    '%LABEL%:<br>',
+    '<input type="text" name="%ID%"><br>'].join('/n');
+    d = = d.replace(/%\\w+%/g, function(all) {
+    return replacements[all] || all;
+    e.innerHTML = d;
+    ancestor.appendChild(e);
+    };
+}
+function textfieldDelMax(id){
+    var ancestor = document.getElementById('id'),
+    descendents = ancestor.getElementsByTagName('div');
+    var i, e;
+    for (i = 0; i < descendents.length; ++i) {
+        e = descendents[i].getElementsbyTagName('*');
+        if (e[0].type === 'hidden' || i === (descendents.length -1)) {
+            if (i > 0) {
+                descendents[i - 1].getElementsbyTagName('*')[0].setAttribute('type', 'hidden')
+                descendents[i - 1].getElementsbyTagName('*')[0].setAttribute('value', '')
+            }
+            break;
+        }
+    };
+}
+function textfieldDel(id){
+    var ancestor = document.getElementById('id'),
+    descendents = ancestor.getElementsByTagName('div');
+    var e = getElementById(id + descendents.length);
+    ancestor.removeChild(e);
+}
+</script> """
         return plainHTML
 
 
@@ -65,22 +120,6 @@ class HTMLFormTemplate(HTMLPart):
         pass
 
 
-class HTMLFormGroupItem(HTMLFormTemplate):
-    """A template item of type "group"."""
-
-    def __init__(self):
-        """Initialize an HTMLFormGrouptItem object."""
-        super().__init__()
-        self.type = 'group'
-        self.constraints = {}
-        self.nodetype = ''
-        self.items = []
-
-    def htmlRepr(self):
-        """Build HTML"""
-        pass
-
-
 class HTMLFormTextItem(HTMLFormTemplate):
     """A template item of type "group"."""
 
@@ -93,7 +132,7 @@ class HTMLFormTextItem(HTMLFormTemplate):
 
     def htmlRepr(self):
         """Build HTML"""
-        plainHTML = ""
+        plainHTML = """<div id="{}">""".format(self.id)
         if 'max' in self.cardinality:
             counter = 1
             while counter <= self.cardinality['max']:
@@ -101,13 +140,20 @@ class HTMLFormTextItem(HTMLFormTemplate):
                     fieldType = 'text'
                 else:
                     fieldType = 'hidden'
-                plainHTML += """{}:<br>
-<input type="{}" name="{}"><br>""".format(
-                    self.label, fieldType, self.id + str(counter))
+                plainHTML += """<div id="{}">{}:<br>
+<input type="{}" name="{}"><br></div>""".format(
+                    self.id + str(counter), self.label, fieldType, self.id + str(counter))
                 counter += 1
+            plainHTML =+ """<button onclick="textfieldAddMax({})">+</button>
+                            <button onclick="textfieldDelMax({})">-</button>""".format(
+                                self.id, self.id)
         else:  # how should no maximum be handled? allow infinite new textbars through js?
-            plainHTML = """{}:<br>
-<input type="text" name="{}"><br>""".format(self.label, self.id + '1')
+            plainHTML = """<div id="{}">{}:<br>
+<input type="text" name="{}"><br></div>""".format(self.id+'1', self.label, self.id + '1')
+            plainHTML =+ """<button onclick="textfieldAdd({}, {})">+</button>
+                            <button onclick="textfieldDel({})">-</button>""".format(
+                                self.id, self.label, self.id)
+        plainHTML += "</div>"
         return plainHTML
 
 
@@ -187,9 +233,14 @@ class HTMLSerializer:
 
         self.nodeShapes = nodeShapes
 
+        counter = 0
         for nodeShape in nodeShapes:
-            form = self.createForm(nodeShapes[nodeShape])
-            self.forms.append(form)
+            if counter == 0:
+                form = self.createForm(nodeShapes[nodeShape])
+                self.forms.append(form)
+            else:
+                self.logger.info('HTMLSerializer only supports displaying one Nodeshape.')
+            counter += 1
 
     def write(self):
         """Write HTMLForm to file or sysout."""
