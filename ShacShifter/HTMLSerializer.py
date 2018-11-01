@@ -44,24 +44,23 @@ class HTMLForm(HTMLPart):
         plainHTML = """<form action="/action.php">"""
         for item in self.formItems:
             plainHTML += item.htmlRepr()
-        plainHTML += """<input type="submit" value="Submit">
+        plainHTML += """<br><input type="submit" value="Submit">
 </form>"""
         plainHTML += """
 <script>
 function textfieldAddMax(id) {
-    var ancestor = document.getElementById('id'),
+    var ancestor = document.getElementById(id),
     descendents = ancestor.getElementsByTagName('div');
-    var i, e;
+    var i;
     for (i = 0; i < descendents.length; ++i) {
-        e = descendents[i].getElementsbyTagName();
-        if (e[0].type === 'hidden') {
-            e[0].setAttribute('type', 'text');
+        if (descendents[i].style.display === 'none') {
+            descendents[i].style.display = 'inline';
             break;
         }
-    };
+    }
 }
 function textfieldAdd(id, label) {
-    var ancestor = document.getElementById('id'),
+    var ancestor = document.getElementById(id),
     descendents = ancestor.getElementsByTagName('div');
     var e, d, replacements;
     counter = descendents.length + 1;
@@ -72,33 +71,36 @@ function textfieldAdd(id, label) {
     e.setAttribute('id', id + counter.toString());
     d = [
     '%LABEL%:<br>',
-    '<input type="text" name="%ID%"><br>'].join('/n');
-    d = = d.replace(/%\\w+%/g, function(all) {
-    return replacements[all] || all;
+    '<input type="text" name="%ID%"><br>'].join('\\n');
+    d = d.replace(/%\\w+%/g, function(all) {
+    return replacements[all] || all;});
     e.innerHTML = d;
     ancestor.appendChild(e);
-    };
 }
 function textfieldDelMax(id){
-    var ancestor = document.getElementById('id'),
+    var ancestor = document.getElementById(id),
     descendents = ancestor.getElementsByTagName('div');
-    var i, e;
+    var i;
     for (i = 0; i < descendents.length; ++i) {
-        e = descendents[i].getElementsbyTagName('*');
-        if (e[0].type === 'hidden' || i === (descendents.length -1)) {
+        if (descendents[i].style.display === 'none') {
             if (i > 0) {
-                descendents[i - 1].getElementsbyTagName('*')[0].setAttribute('type', 'hidden')
-                descendents[i - 1].getElementsbyTagName('*')[0].setAttribute('value', '')
+                descendents[i - 1].style.display = 'none'
             }
             break;
         }
-    };
+        else if(i === (descendents.length -1)) {
+            descendents[i].style.display = 'none'
+            break;
+        }
+    }
 }
 function textfieldDel(id){
-    var ancestor = document.getElementById('id'),
+    var ancestor = document.getElementById(id),
     descendents = ancestor.getElementsByTagName('div');
-    var e = getElementById(id + descendents.length);
-    ancestor.removeChild(e);
+    var e = document.getElementById(id + descendents.length.toString());
+    if(descendents.length > 1) {
+        ancestor.removeChild(e);
+    }
 }
 </script> """
         return plainHTML
@@ -137,23 +139,20 @@ class HTMLFormTextItem(HTMLFormTemplate):
             counter = 1
             while counter <= self.cardinality['max']:
                 if counter <= self.cardinality['pref']:
-                    fieldType = 'text'
+                    style = ''
                 else:
-                    fieldType = 'hidden'
-                plainHTML += """<div id="{}">{}:<br>
-<input type="{}" name="{}"><br></div>""".format(
-                    self.id + str(counter), self.label, fieldType, self.id + str(counter))
+                    style = 'style="display:none"'
+                plainHTML += """<div {} id="{}">{}:<br>
+<input type="text" name="{}"><br></div>""".format(
+                    style, self.id + str(counter), self.label, self.id + str(counter))
                 counter += 1
-            plainHTML =+ """<button onclick="textfieldAddMax({})">+</button>
-                            <button onclick="textfieldDelMax({})">-</button>""".format(
-                                self.id, self.id)
+            plainHTML += """</div><button type="button" onclick="textfieldAddMax('{}')">+</button>
+<button type="button" onclick="textfieldDelMax('{}')">-</button>""".format(self.id, self.id)
         else:  # how should no maximum be handled? allow infinite new textbars through js?
-            plainHTML = """<div id="{}">{}:<br>
-<input type="text" name="{}"><br></div>""".format(self.id+'1', self.label, self.id + '1')
-            plainHTML =+ """<button onclick="textfieldAdd({}, {})">+</button>
-                            <button onclick="textfieldDel({})">-</button>""".format(
-                                self.id, self.label, self.id)
-        plainHTML += "</div>"
+            plainHTML += """<div id="{}">{}:<br>
+<input type="text" name="{}"><br></div>""".format(self.id + '1', self.label, self.id + '1')
+            plainHTML += """</div><button type="button" onclick="textfieldAdd('{}', '{}')">+</button>
+<button type="button" onclick="textfieldDel('{}')">-</button>""".format(self.id, self.label, self.id)
         return plainHTML
 
 
