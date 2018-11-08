@@ -41,13 +41,23 @@ class HTMLForm(HTMLPart):
 
     def htmlRepr(self):
         """Build HTML"""
-        plainHTML = """<form action="/action.php">"""
+        plainHTML = """<form action="">
+<input type="text" name="endpoint"><br>
+<input type="text" name="ressourceIRI"><br>
+<input type="text" name="namedGraph"><br>"""
         for item in self.formItems:
             plainHTML += item.htmlRepr()
-        plainHTML += """<br><input type="submit" value="Submit">
+        plainHTML += """<br><input type="button" onclick="sendData(this.form)" value="Submit">
 </form>"""
         plainHTML += """
 <script>
+if(typeof(String.prototype.trim) === "undefined")
+{
+    String.prototype.trim = function()
+    {
+        return String(this).replace(/^\\s+|\\s+$/g, '');
+    };
+}
 function textfieldAddMax(id) {
     var ancestor = document.getElementById(id),
     descendents = ancestor.getElementsByTagName('div');
@@ -85,11 +95,13 @@ function textfieldDelMax(id){
         if (descendents[i].style.display === 'none') {
             if (i > 0) {
                 descendents[i - 1].style.display = 'none'
+                descendents[i - 1].children[1].value='';
             }
             break;
         }
         else if(i === (descendents.length -1)) {
             descendents[i].style.display = 'none'
+            descendents[i].children[1].value='';
             break;
         }
     }
@@ -102,7 +114,46 @@ function textfieldDel(id){
         ancestor.removeChild(e);
     }
 }
-</script> """
+
+function sendData(form){
+    if(form.endpoint.value === "" || form.ressourceIRI.value === "") {
+        return;
+    }
+    //cant check for urls properly all regex solutions seem to be bad, use jquery? >only literals
+    var triples = "",
+    query = "";
+    var inputs = form.getElementsByTagName('div');
+    for (var i = 0; i < inputs.length; i++) {
+        var subinputs = inputs[i].getElementsByTagName('div');
+        for (var j = 0; j < subinputs.length; j++) {
+            triples += '<' + form.ressourceIRI.value.trim() + '> <' + inputs[i].id +
+                       '> "' + subinputs[j].children[1].value.trim() + '". ';
+        }
+    }
+    if(form.namedGraph.value === "") {
+        query = "DELETE DATA { GRAPH <http://example/Graph#> {" + triples + "}};" +
+                "INSERT DATA { GRAPH <http://example/Graph#> {" + triples + "}}";
+    }
+    else {
+        query = "DELETE DATA { GRAPH <" + form.namedGraph.value.trim() + "> {" + triples + "}};" +
+                "INSERT DATA { GRAPH <" + form.namedGraph.value.trim() + "> {" + triples + "}}";
+    }
+    var xhttp;
+    xhttp = new XMLHttpRequest();
+    xhttp.onreadystatechange = function() {
+        if (this.readyState == 4 && this.status == 200) {
+            resultPresentation(this);
+        }
+    };
+    alert(query);
+    xhttp.open("GET", form.endpoint.value.trim() + "?query=" + encodeURI(query), true);
+    xhttp.send();
+}
+
+function resultPresentation(result){
+    alert(result);
+}
+</script>"""
         return plainHTML
 
 
@@ -151,8 +202,9 @@ class HTMLFormTextItem(HTMLFormTemplate):
         else:  # how should no maximum be handled? allow infinite new textbars through js?
             plainHTML += """<div id="{}">{}:<br>
 <input type="text" name="{}"><br></div>""".format(self.id + '1', self.label, self.id + '1')
-            plainHTML += """</div><button type="button" onclick="textfieldAdd('{}', '{}')">+</button>
-<button type="button" onclick="textfieldDel('{}')">-</button>""".format(self.id, self.label, self.id)
+            plainHTML += """</div><button type="button" onclick="textfieldAdd('{}', '{}')">+
+</button><button type="button" onclick="textfieldDel('{}')">-
+</button>""".format(self.id, self.label, self.id)
         return plainHTML
 
 
@@ -216,7 +268,7 @@ class HTMLSerializer:
     forms = []
     outputfile = None
 
-    def __init__(self, nodeShapes, outputfile=None):
+    def __init__(self, nodeShapes, outputfile=None, endpoint=None):
         """Initialize the Serializer and parse des ShapeParser results.
 
         args: shapes

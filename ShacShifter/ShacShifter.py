@@ -17,14 +17,14 @@ class ShacShifter:
     logger = logging.getLogger('ShacShifter')
 
     # def __init__(self):
-    def shift(self, input, output, format):
+    def shift(self, input, output, format, endpoint):
         """Transform input to output with format."""
         self.logger.debug('Start Shifting from {} into {}'.format(input, output))
         parser = ShapeParser()
         parseResult = parser.parseShape(input)
 
         if (format == "html"):
-            writer = HTMLSerializer(parseResult, output)
+            writer = HTMLSerializer(parseResult, output, endpoint)
             writer.write()
         elif (format == "rdforms"):
             writer = RDFormsSerializer(parseResult, output)

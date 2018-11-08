@@ -26,6 +26,7 @@ def main(args=None):
     parser.add_argument('-l', '--logfile', type=str, help="The log file")
     parser.add_argument('-v', '--verbose', action="store_true")
     parser.add_argument('-vv', '--verboseverbose', action="store_true")
+    parser.add_argument('-se', '--sparqlendpoint', type=str, help="The Sparql Endpoint")
 
     args = parser.parse_args()
 
@@ -50,4 +51,4 @@ def main(args=None):
     logger.debug('Logger initialized')
 
     shifter = ShacShifter()
-    shifter.shift(args.shacl, args.output, args.format)
+    shifter.shift(args.shacl, args.output, args.format, args.sparqlendpoint)
