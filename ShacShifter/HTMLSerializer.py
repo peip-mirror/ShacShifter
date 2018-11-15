@@ -21,13 +21,16 @@ class HTMLPart:
 
 class HTMLForm(HTMLPart):
     """The HTMLForm class."""
+    def __init__(self, endpoint, ressourceIRI, namedGraph):
 
-    def __init__(self):
         """Initialize an HTMLForm object."""
         self.label = ''
         self.description = {}
         self.root = ''
         self.formItems = []
+        self.endpoint = endpoint
+        self.ressourceIRI = ressourceIRI
+        self.namedGraph = namedGraph
 
     def __str__(self):
         """Print HTMLFormTemplate object."""
@@ -196,7 +199,7 @@ class HTMLFormTemplate(HTMLPart):
 class HTMLFormTextItem(HTMLFormTemplate):
     """A template item of type "group"."""
 
-    def __init__(self, endpoint, ressourceIRI, namedGraph):
+    def __init__(self):
         """Initialize an HTMLFormTextItem object."""
         super().__init__()
         self.cardinality = {'min': 0, 'pref': 1}
@@ -369,7 +372,7 @@ y.min.js"></script>
                             formItems.extend(subFormItems)
             return formItems
 
-        form = HTMLForm()
+        form = HTMLForm(self.endpoint, self.ressourceIRI, self.namedGraph)
         form.label = addNodeLabel()
         if nodeShape.isSet['message']:
             form.description = nodeShape.message
