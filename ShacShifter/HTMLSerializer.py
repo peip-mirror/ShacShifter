@@ -42,9 +42,13 @@ class HTMLForm(HTMLPart):
     def htmlRepr(self):
         """Build HTML"""
         plainHTML = """<form action="">
-<input type="text" name="endpoint"><br>
-<input type="text" name="ressourceIRI"><br>
-<input type="text" name="namedGraph"><br>"""
+SPARQL Endpoint <br>
+<input type="text" name="endpoint" value="{}"><br>
+Ressource IRI <br>
+<input type="text" name="ressourceIRI" value="{}"><br>
+Graph (if empty equals http://example/Graph#) <br>
+<input type="text" name="namedGraph" value="{}"><br>""".format(self.endpoint, self.ressourceIRI,
+                                                               self.namedGraph)
         for item in self.formItems:
             plainHTML += item.htmlRepr()
         plainHTML += """<br><input type="button" onclick="sendData(this.form)" value="Submit">
@@ -116,18 +120,34 @@ function textfieldDel(id){
 }
 
 function sendData(form){
-    if(form.endpoint.value === "" || form.ressourceIRI.value === "") {
+    if(form.endpoint.value.trim() === "" || form.ressourceIRI.value.trim() === "") {
         return;
     }
     //cant check for urls properly all regex solutions seem to be bad, use jquery? >only literals
     var triples = "",
-    query = "";
+    query = "",
+    endpointURI = new URI(form.endpoint.value.trim()),
+    ressourceURI = new URI(form.ressourceIRI.value.trim()),
+    namedGraphURI = new URI(form.namedGraph.value.trim());
+    if(!endpointURI.is("url") || !(ressourceURI.is("url") || ressourceURI.is("urn"))){
+        return;
+    }
+    if(!form.namedGraph.value.trim === "" && !namedGraphURI.is("url")){
+        return;
+    }
     var inputs = form.getElementsByTagName('div');
     for (var i = 0; i < inputs.length; i++) {
         var subinputs = inputs[i].getElementsByTagName('div');
         for (var j = 0; j < subinputs.length; j++) {
+            var object = new URI(subinputs[j].children[1].value.trim());
+            if(object.is("url") || object.is("urn")){
+                object = '<' + subinputs[j].children[1].value.trim() +  '>';
+            }
+            else {
+                object = '"' + subinputs[j].children[1].value.trim() +  '"';
+            }
             triples += '<' + form.ressourceIRI.value.trim() + '> <' + inputs[i].id +
-                       '> "' + subinputs[j].children[1].value.trim() + '". ';
+                       '> ' + subinputs[j].children[1].value.trim() + '. ';
         }
     }
     if(form.namedGraph.value === "") {
@@ -146,8 +166,8 @@ function sendData(form){
         }
     };
     alert(query);
-    xhttp.open("GET", form.endpoint.value.trim() + "?query=" + encodeURI(query), true);
-    xhttp.send();
+    xhttp.open("POST", form.endpoint.value.trim(), true);
+    xhttp.send("?query=" + encodeURI(query));
 }
 
 function resultPresentation(result){
@@ -176,7 +196,7 @@ class HTMLFormTemplate(HTMLPart):
 class HTMLFormTextItem(HTMLFormTemplate):
     """A template item of type "group"."""
 
-    def __init__(self):
+    def __init__(self, endpoint, ressourceIRI, namedGraph):
         """Initialize an HTMLFormTextItem object."""
         super().__init__()
         self.cardinality = {'min': 0, 'pref': 1}
@@ -268,11 +288,14 @@ class HTMLSerializer:
     forms = []
     outputfile = None
 
-    def __init__(self, nodeShapes, outputfile=None, endpoint=None):
+    def __init__(self, nodeShapes, outputfile=None, endpoint="", ressourceIRI="", namedGraph=""):
         """Initialize the Serializer and parse des ShapeParser results.
 
         args: shapes
               string outputfile
+              string endpoint
+              string ressourceIRI
+              string namedGraph
         """
         try:
             fp = open(outputfile, 'w')
@@ -283,6 +306,9 @@ class HTMLSerializer:
             self.logger.error('Content will be printed to sys.')
 
         self.nodeShapes = nodeShapes
+        self.endpoint = endpoint
+        self.ressourceIRI = ressourceIRI
+        self.namedGraph = namedGraph
 
         counter = 0
         for nodeShape in nodeShapes:
@@ -295,15 +321,20 @@ class HTMLSerializer:
 
     def write(self):
         """Write HTMLForm to file or sysout."""
+        jquery = """<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquer\
+y.min.js"></script>
+"""
         if self.outputfile:
             fp = open(self.outputfile, 'w')
             for form in self.forms:
                 htmlForm = form.toHTML()
                 print(htmlForm)
+                fp.write(jquery)
                 fp.write(htmlForm + '\n')
             fp.close()
         else:
             for form in self.forms:
+                print(jquery)
                 print(form.toHTML())
 
     def createForm(self, nodeShape):
