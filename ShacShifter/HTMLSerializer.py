@@ -44,7 +44,8 @@ class HTMLForm(HTMLPart):
 
     def htmlRepr(self):
         """Build HTML"""
-        plainHTML = """<form action="">
+        plainHTML = """<script src="https://bowercdn.net/c/urijs-1.19.1/src/URI.min.js"></script>
+<form action="">
 SPARQL Endpoint <br>
 <input type="text" name="endpoint" value="{}"><br>
 Ressource IRI <br>
