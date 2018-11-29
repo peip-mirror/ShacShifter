@@ -151,7 +151,7 @@ function sendData(form){
                 object = '"' + subinputs[j].children[1].value.trim() +  '"';
             }
             triples += '<' + form.ressourceIRI.value.trim() + '> <' + inputs[i].id +
-                       '> ' + subinputs[j].children[1].value.trim() + '. ';
+                       '> "' + subinputs[j].children[1].value.trim() + '" . ';
         }
     }
     if(form.namedGraph.value === "") {
