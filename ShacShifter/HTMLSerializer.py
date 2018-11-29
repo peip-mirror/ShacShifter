@@ -171,7 +171,7 @@ function sendData(form){
     };
     alert(query);
     xhttp.open("POST", form.endpoint.value.trim(), true);
-    xhttp.setRequestHeader("Content-Type", "application\/sparql-update");
+    xhttp.setRequestHeader("Content-Type", "application\/x-www-form-urlencoded");
     xhttp.send("?update=" + encodeURIComponent(query));
 }
 
