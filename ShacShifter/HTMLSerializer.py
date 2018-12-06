@@ -66,60 +66,50 @@ if(typeof(String.prototype.trim) === "undefined")
         return String(this).replace(/^\\s+|\\s+$/g, '');
     };
 }
-function textfieldAddMax(id) {
-    var ancestor = document.getElementById(id),
-    descendents = ancestor.getElementsByTagName('div');
-    var i;
-    for (i = 0; i < descendents.length; ++i) {
-        if (descendents[i].style.display === 'none') {
-            descendents[i].style.display = 'inline';
-            break;
-        }
-    }
-}
+
 function textfieldAdd(id, label) {
     var ancestor = document.getElementById(id),
     descendents = ancestor.getElementsByTagName('div');
+    if(ancestor.dataset.max > 0 && descendents.length >= ancestor.dataset.max) {
+        return;
+    }
     var e, d, replacements;
     counter = descendents.length + 1;
     replacements = {
     "%LABEL%": label,
-    "%ID%": id + counter};
+    "%ID%": id + counter,
+    "%BID%": id};
     e = document.createElement('div');
     e.setAttribute('id', id + counter.toString());
     d = [
     '%LABEL%:<br>',
-    '<input type="text" name="%ID%"><br>'].join('\\n');
+    '<input type="text" name="%ID%"><button type="button"',
+    'onclick="textfieldDel(\\'%BID%\\', this.parentElement)">-</button>',
+    '<br>'].join('\\n');
     d = d.replace(/%\\w+%/g, function(all) {
     return replacements[all] || all;});
     e.innerHTML = d;
     ancestor.appendChild(e);
 }
-function textfieldDelMax(id){
+
+function textfieldDel(id, delDiv){
     var ancestor = document.getElementById(id),
-    descendents = ancestor.getElementsByTagName('div');
-    var i;
-    for (i = 0; i < descendents.length; ++i) {
-        if (descendents[i].style.display === 'none') {
-            if (i > 0) {
-                descendents[i - 1].style.display = 'none'
-                descendents[i - 1].children[1].value='';
-            }
-            break;
-        }
-        else if(i === (descendents.length -1)) {
-            descendents[i].style.display = 'none'
-            descendents[i].children[1].value='';
-            break;
-        }
+    descendents = ancestor.getElementsByTagName('div'),
+    min = ancestor.dataset.min;
+    if(descendents.length <= min){
+        // consider sending a message why
+        return;
     }
+    ancestor.removeChild(delDiv);
+    fixIdValues(id)
 }
-function textfieldDel(id){
+
+function fixIdValues(id){
     var ancestor = document.getElementById(id),
     descendents = ancestor.getElementsByTagName('div');
-    var e = document.getElementById(id + descendents.length.toString());
-    if(descendents.length > 1) {
-        ancestor.removeChild(e);
+    for (var i = 0; i < descendents.length; i++) {
+        descendents[i].id = id + (i+1).toString();
+        descendents[i].children[1].name = id + (i+1).toString();
     }
 }
 
@@ -210,26 +200,22 @@ class HTMLFormTextItem(HTMLFormTemplate):
 
     def htmlRepr(self):
         """Build HTML"""
-        plainHTML = """<div id="{}">""".format(self.id)
+        maxSet = False
         if 'max' in self.cardinality:
-            counter = 1
-            while counter <= self.cardinality['max']:
-                if counter <= self.cardinality['pref']:
-                    style = ''
-                else:
-                    style = 'style="display:none"'
-                plainHTML += """<div {} id="{}">{}:<br>
-<input type="text" name="{}"><br></div>""".format(
-                    style, self.id + str(counter), self.label, self.id + str(counter))
-                counter += 1
-            plainHTML += """</div><button type="button" onclick="textfieldAddMax('{}')">+</button>
-<button type="button" onclick="textfieldDelMax('{}')">-</button>""".format(self.id, self.id)
-        else:  # how should no maximum be handled? allow infinite new textbars through js?
+            maxSet = True
+        plainHTML = """<div id="{}" data-min="{}" data-max="{}">""".format(
+            self.id, self.cardinality['min'], self.cardinality['max'] if maxSet else 0)
+        counter = 1
+        while counter <= self.cardinality['pref']:
+            if maxSet and counter >= self.cardinality['max'] + 1:
+                break
+
             plainHTML += """<div id="{}">{}:<br>
-<input type="text" name="{}"><br></div>""".format(self.id + '1', self.label, self.id + '1')
-            plainHTML += """</div><button type="button" onclick="textfieldAdd('{}', '{}')">+
-</button><button type="button" onclick="textfieldDel('{}')">-
-</button>""".format(self.id, self.label, self.id)
+<input type="text" name="{}"><button type="button" onclick="textfieldDel('{}', this.parentElement)">-</button>
+<br></div>""".format(self.id + str(counter), self.label, self.id + str(counter), self.id)
+            counter += 1
+        plainHTML += """</div><button type="button" onclick="textfieldAdd('{}', '{}')">+</button>
+""".format(self.id, self.label)
         return plainHTML
 
 
@@ -311,9 +297,9 @@ class HTMLSerializer:
             self.logger.error('Content will be printed to sys.')
 
         self.nodeShapes = nodeShapes
-        self.endpoint = endpoint
-        self.ressourceIRI = ressourceIRI
-        self.namedGraph = namedGraph
+        self.endpoint = "" if (endpoint is None) else endpoint
+        self.ressourceIRI = "" if (ressourceIRI is None) else ressourceIRI
+        self.namedGraph = "" if (namedGraph is None) else namedGraph
 
         counter = 0
         for nodeShape in nodeShapes:
