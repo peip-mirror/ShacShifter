@@ -1,5 +1,6 @@
 from .modules.NodeShape import NodeShape
 from .modules.PropertyShape import PropertyShape
+from .modules.StringSupplier import StringSupplier
 from .ShapeParser import ShapeParser
 import logging
 
@@ -73,17 +74,38 @@ function textfieldAdd(id, label) {
     if(ancestor.dataset.max > 0 && descendents.length >= ancestor.dataset.max) {
         return;
     }
-    var e, d, replacements;
+    var e, d, type, disableChoice, checked1, checked2, replacements;
     counter = descendents.length + 1;
+    type = ancestor.dataset.type;
+    if(type != "") {
+        disableChoice = "disabled"
+    }
+    else {
+        disableChoice = ""
+    }
+    if(disableChoice == "disabled"){
+        checked1 = "";
+        checked2 = "checked";
+    }
+    else {
+        checked1 = "checked";
+        checked2 = "";
+    }
     replacements = {
     "%LABEL%": label,
     "%ID%": id + counter,
-    "%BID%": id};
+    "%BID%": id,
+    "%CHOICE%": disableChoice,
+    "%CHECKED1%": checked1,
+    "%CHECKED2%": checked2};
     e = document.createElement('div');
     e.setAttribute('id', id + counter.toString());
     d = [
     '%LABEL%:<br>',
-    '<input type="text" name="%ID%"><button type="button"',
+    '<input type="text" name="%ID%">',
+    '<input type="radio" name="%ID%radio" %CHOICE% value="iri" %CHECKED1%>IRI',
+    '<input type="radio" name="%ID%radio" %CHOICE% value="literal" %CHECKED2%>Literal',
+    '<button type="button"',
     'onclick="textfieldDel(\\'%BID%\\', this.parentElement)">-</button>',
     '<br>'].join('\\n');
     d = d.replace(/%\\w+%/g, function(all) {
@@ -110,6 +132,8 @@ function fixIdValues(id){
     for (var i = 0; i < descendents.length; i++) {
         descendents[i].id = id + (i+1).toString();
         descendents[i].children[1].name = id + (i+1).toString();
+        descendents[i].children[2].name = id + (i+1).toString() + "radio";
+        descendents[i].children[3].name = id + (i+1).toString() + "radio";
     }
 }
 
@@ -196,23 +220,30 @@ class HTMLFormTextItem(HTMLFormTemplate):
         super().__init__()
         self.cardinality = {'min': 0, 'pref': 1}
         self.type = 'text'
-        self.nodetype = ''
+        self.nodeKind = ''
+        self.datatype = ''
 
     def htmlRepr(self):
         """Build HTML"""
         maxSet = False
         if 'max' in self.cardinality:
             maxSet = True
-        plainHTML = """<div id="{}" data-min="{}" data-max="{}">""".format(
-            self.id, self.cardinality['min'], self.cardinality['max'] if maxSet else 0)
+        plainHTML = """<div id="{}" data-min="{}" data-max="{}" data-type="{}">""".format(
+            self.id, self.cardinality['min'], self.cardinality['max'] if maxSet else 0,
+            self.datatype)
+        disableChoice = 'disabled' if self.datatype != '' else ''
         counter = 1
         while counter <= self.cardinality['pref']:
             if maxSet and counter >= self.cardinality['max'] + 1:
                 break
 
             plainHTML += """<div id="{}">{}:<br>
-<input type="text" name="{}"><button type="button" onclick="textfieldDel('{}', this.parentElement)">-</button>
-<br></div>""".format(self.id + str(counter), self.label, self.id + str(counter), self.id)
+<input type="text" name="{}"><input type="radio" name="{}radio" {} value="iri" {}>IRI
+<input type="radio" name="{}radio" {} value="literal" {}>Literal
+<button type="button" onclick="textfieldDel('{}', this.parentElement)">-</button>
+<br></div>""".format(self.id + str(counter), self.label, self.id + str(counter),
+                self.id + str(counter), disableChoice, 'checked' if not disableChoice else '',
+                self.id + str(counter), disableChoice, 'checked' if disableChoice else '', self.id)
             counter += 1
         plainHTML += """</div><button type="button" onclick="textfieldAdd('{}', '{}')">+</button>
 """.format(self.id, self.label)
@@ -227,7 +258,7 @@ class HTMLFormChoiceItem(HTMLFormTemplate):
         super().__init__()
         self.type = 'choice'
         self.constraints = {}
-        self.nodetype = ''
+        self.nodeKind = ''
         self.choices = []
 
     def __str__(self):
@@ -391,6 +422,8 @@ y.min.js"></script>
 
         def fillTextItem(item):
             item.cardinality = getCardinality()
+            if propertyShape.isSet['datatype']:
+                item.datatype = propertyShape.datatype
             return item
 
         def fillBasicItemValues(item):
@@ -398,7 +431,7 @@ y.min.js"></script>
             item.label = propertyShape.name if propertyShape.isSet['name'] else (
                                     propertyShape.path.rsplit('/', 1)[-1])
             item.description = getDescription()
-            item.nodetype = nodeKind
+            item.nodeKind = nodeKind
             return item
 
         def getDescription():
