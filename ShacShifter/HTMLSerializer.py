@@ -29,9 +29,9 @@ class HTMLForm(HTMLPart):
         self.description = {}
         self.root = ''
         self.formItems = []
-        self.endpoint = endpoint
-        self.ressourceIRI = ressourceIRI
-        self.namedGraph = namedGraph
+        self.endpoint = '' if endpoint is None else endpoint
+        self.ressourceIRI = '' if ressourceIRI is None else ressourceIRI
+        self.namedGraph = '' if namedGraph is None else namedGraph
 
     def __str__(self):
         """Print HTMLFormTemplate object."""
@@ -45,154 +45,12 @@ class HTMLForm(HTMLPart):
 
     def htmlRepr(self):
         """Build HTML"""
-        plainHTML = """<script src="https://bowercdn.net/c/urijs-1.19.1/src/URI.min.js"></script>
-<form action="">
-SPARQL Endpoint <br>
-<input type="text" name="endpoint" value="{}"><br>
-Ressource IRI <br>
-<input type="text" name="ressourceIRI" value="{}"><br>
-Graph (if empty equals http://example/Graph#) <br>
-<input type="text" name="namedGraph" value="{}"><br>""".format(self.endpoint, self.ressourceIRI,
-                                                               self.namedGraph)
+        plainHTML = StringSupplier().header.format(self.endpoint, self.ressourceIRI,
+                                                   self.namedGraph)
         for item in self.formItems:
             plainHTML += item.htmlRepr()
-        plainHTML += """<br><input type="button" onclick="sendData(this.form)" value="Submit">
-</form>"""
-        plainHTML += """
-<script>
-if(typeof(String.prototype.trim) === "undefined")
-{
-    String.prototype.trim = function()
-    {
-        return String(this).replace(/^\\s+|\\s+$/g, '');
-    };
-}
-
-function textfieldAdd(id, label) {
-    var ancestor = document.getElementById(id),
-    descendents = ancestor.getElementsByTagName('div');
-    if(ancestor.dataset.max > 0 && descendents.length >= ancestor.dataset.max) {
-        return;
-    }
-    var e, d, type, disableChoice, checked1, checked2, replacements;
-    counter = descendents.length + 1;
-    type = ancestor.dataset.type;
-    if(type != "") {
-        disableChoice = "disabled"
-    }
-    else {
-        disableChoice = ""
-    }
-    if(disableChoice == "disabled"){
-        checked1 = "";
-        checked2 = "checked";
-    }
-    else {
-        checked1 = "checked";
-        checked2 = "";
-    }
-    replacements = {
-    "%LABEL%": label,
-    "%ID%": id + counter,
-    "%BID%": id,
-    "%CHOICE%": disableChoice,
-    "%CHECKED1%": checked1,
-    "%CHECKED2%": checked2};
-    e = document.createElement('div');
-    e.setAttribute('id', id + counter.toString());
-    d = [
-    '%LABEL%:<br>',
-    '<input type="text" name="%ID%">',
-    '<input type="radio" name="%ID%radio" %CHOICE% value="iri" %CHECKED1%>IRI',
-    '<input type="radio" name="%ID%radio" %CHOICE% value="literal" %CHECKED2%>Literal',
-    '<button type="button"',
-    'onclick="textfieldDel(\\'%BID%\\', this.parentElement)">-</button>',
-    '<br>'].join('\\n');
-    d = d.replace(/%\\w+%/g, function(all) {
-    return replacements[all] || all;});
-    e.innerHTML = d;
-    ancestor.appendChild(e);
-}
-
-function textfieldDel(id, delDiv){
-    var ancestor = document.getElementById(id),
-    descendents = ancestor.getElementsByTagName('div'),
-    min = ancestor.dataset.min;
-    if(descendents.length <= min){
-        // consider sending a message why
-        return;
-    }
-    ancestor.removeChild(delDiv);
-    fixIdValues(id)
-}
-
-function fixIdValues(id){
-    var ancestor = document.getElementById(id),
-    descendents = ancestor.getElementsByTagName('div');
-    for (var i = 0; i < descendents.length; i++) {
-        descendents[i].id = id + (i+1).toString();
-        descendents[i].children[1].name = id + (i+1).toString();
-        descendents[i].children[2].name = id + (i+1).toString() + "radio";
-        descendents[i].children[3].name = id + (i+1).toString() + "radio";
-    }
-}
-
-function sendData(form){
-    if(form.endpoint.value.trim() === "" || form.ressourceIRI.value.trim() === "") {
-        return;
-    }
-    //cant check for urls properly all regex solutions seem to be bad, use jquery? >only literals
-    var triples = "",
-    query = "",
-    endpointURI = new URI(form.endpoint.value.trim()),
-    ressourceURI = new URI(form.ressourceIRI.value.trim()),
-    namedGraphURI = new URI(form.namedGraph.value.trim());
-    if(!endpointURI.is("url") || !(ressourceURI.is("url") || ressourceURI.is("urn"))){
-        return;
-    }
-    if(!form.namedGraph.value.trim === "" && !namedGraphURI.is("url")){
-        return;
-    }
-    var inputs = form.getElementsByTagName('div');
-    for (var i = 0; i < inputs.length; i++) {
-        var subinputs = inputs[i].getElementsByTagName('div');
-        for (var j = 0; j < subinputs.length; j++) {
-            var object = new URI(subinputs[j].children[1].value.trim());
-            if(object.is("url") || object.is("urn")){
-                object = '<' + subinputs[j].children[1].value.trim() +  '>';
-            }
-            else {
-                object = '"' + subinputs[j].children[1].value.trim() +  '"';
-            }
-            triples += '<' + form.ressourceIRI.value.trim() + '> <' + inputs[i].id +
-                       '> "' + subinputs[j].children[1].value.trim() + '" . ';
-        }
-    }
-    if(form.namedGraph.value === "") {
-        query = "DELETE DATA { GRAPH <http://example/Graph#> {" + triples + "}};" +
-                "INSERT DATA { GRAPH <http://example/Graph#> {" + triples + "}}";
-    }
-    else {
-        query = "DELETE DATA { GRAPH <" + form.namedGraph.value.trim() + "> {" + triples + "}};" +
-                "INSERT DATA { GRAPH <" + form.namedGraph.value.trim() + "> {" + triples + "}}";
-    }
-    var xhttp;
-    xhttp = new XMLHttpRequest();
-    xhttp.onreadystatechange = function() {
-        if (this.readyState == 4 && this.status == 200) {
-            resultPresentation(this);
-        }
-    };
-    alert(query);
-    xhttp.open("POST", form.endpoint.value.trim(), true);
-    xhttp.setRequestHeader("Content-Type", "application\/x-www-form-urlencoded");
-    xhttp.send("update=" + encodeURIComponent(query));
-}
-
-function resultPresentation(result){
-    alert(result);
-}
-</script>"""
+        plainHTML += StringSupplier().submit
+        plainHTML += StringSupplier().script
         return plainHTML
 
 
@@ -228,7 +86,7 @@ class HTMLFormTextItem(HTMLFormTemplate):
         maxSet = False
         if 'max' in self.cardinality:
             maxSet = True
-        plainHTML = """<div id="{}" data-min="{}" data-max="{}" data-type="{}">""".format(
+        plainHTML = StringSupplier().propertyMainDiv.format(
             self.id, self.cardinality['min'], self.cardinality['max'] if maxSet else 0,
             self.datatype)
         disableChoice = 'disabled' if self.datatype != '' else ''
@@ -237,16 +95,12 @@ class HTMLFormTextItem(HTMLFormTemplate):
             if maxSet and counter >= self.cardinality['max'] + 1:
                 break
 
-            plainHTML += """<div id="{}">{}:<br>
-<input type="text" name="{}"><input type="radio" name="{}radio" {} value="iri" {}>IRI
-<input type="radio" name="{}radio" {} value="literal" {}>Literal
-<button type="button" onclick="textfieldDel('{}', this.parentElement)">-</button>
-<br></div>""".format(self.id + str(counter), self.label, self.id + str(counter),
-                self.id + str(counter), disableChoice, 'checked' if not disableChoice else '',
-                self.id + str(counter), disableChoice, 'checked' if disableChoice else '', self.id)
+            plainHTML += StringSupplier().propertySubDiv.format(
+                self.label, 'checked' if not disableChoice else '',
+                'checked' if disableChoice else '',
+                self.id, id=(self.id + str(counter)), choice=disableChoice)
             counter += 1
-        plainHTML += """</div><button type="button" onclick="textfieldAdd('{}', '{}')">+</button>
-""".format(self.id, self.label)
+        plainHTML += StringSupplier().propertyMainDivClose.format(self.id, self.label)
         return plainHTML
 
 
@@ -299,7 +153,7 @@ class HTMLFormChoiceExpression(HTMLPart):
 
     def htmlRepr(self):
         """Build HTML"""
-        plainHTML = """ <input type="radio" name="{}" value="{}"> {}<br>""".format(
+        plainHTML = StringSupplier().choiceInput.format(
                 self.label, self.label, self.label)
 
 
@@ -343,20 +197,18 @@ class HTMLSerializer:
 
     def write(self):
         """Write HTMLForm to file or sysout."""
-        jquery = """<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquer\
-y.min.js"></script>
-"""
         if self.outputfile:
             fp = open(self.outputfile, 'w')
             for form in self.forms:
                 htmlForm = form.toHTML()
+                print(StringSupplier().jqueryCDN)
                 print(htmlForm)
-                fp.write(jquery)
+                fp.write(StringSupplier().jqueryCDN)
                 fp.write(htmlForm + '\n')
             fp.close()
         else:
             for form in self.forms:
-                print(jquery)
+                print(StringSupplier().jqueryCDN)
                 print(form.toHTML())
 
     def createForm(self, nodeShape):
