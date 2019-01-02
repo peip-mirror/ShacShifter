@@ -127,11 +127,11 @@ function sendData(form){
         }
     }
     if(form.namedGraph.value === "") {
-        query = "DELETE DATA { GRAPH <http://example/Graph#> {" + triples + "}};" +
-                "INSERT DATA { GRAPH <http://example/Graph#> {" + triples + "}}";
+        query = "DELETE { ?s ?p ?o} WHERE { ?s ?p ?o . FILTER (sameTerm(?s, <" + form.ressourceIRI.value.trim() + ">))}" +
+                "INSERT DATA {" + triples + "}";
     }
     else {
-        query = "DELETE DATA { GRAPH <" + form.namedGraph.value.trim() + "> {" + triples + "}};" +
+        query = "DELETE { GRAPH <" + form.namedGraph.value.trim() + ">  {?s ?p ?o}} WHERE { GRAPH <" + form.namedGraph.value.trim() + "> {"?s ?p ?o . FILTER (sameTerm(?s, <" + form.ressourceIRI.value.trim() + ">))"}};" +
                 "INSERT DATA { GRAPH <" + form.namedGraph.value.trim() + "> {" + triples + "}}";
     }
     var xhttp;
