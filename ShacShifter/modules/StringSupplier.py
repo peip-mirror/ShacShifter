@@ -115,15 +115,15 @@ function sendData(form){
     for (var i = 0; i < inputs.length; i++) {
         var subinputs = inputs[i].getElementsByTagName('div');
         for (var j = 0; j < subinputs.length; j++) {
-            var object = new URI(subinputs[j].children[1].value.trim());
-            if(object.is("url") || object.is("urn")){
-                object = '<' + subinputs[j].children[1].value.trim() +  '>';
+            var object = subinputs[j].children[1].value.trim();
+            if(subinputs[j].children[2].checked){
+                object = '<' + object +  '>';
             }
             else {
-                object = '"' + subinputs[j].children[1].value.trim() +  '"';
+                object = '"' + object +  '"';
             }
             triples += '<' + form.ressourceIRI.value.trim() + '> <' + inputs[i].id +
-                       '> "' + subinputs[j].children[1].value.trim() + '" . ';
+                       '> ' + object + ' . ';
         }
     }
     if(form.namedGraph.value === "") {
