@@ -182,9 +182,9 @@ class HTMLSerializer:
             self.logger.error('Content will be printed to sys.')
 
         self.nodeShapes = nodeShapes
-        self.endpoint = "" if (endpoint is None) else endpoint
-        self.ressourceIRI = "" if (ressourceIRI is None) else ressourceIRI
-        self.namedGraph = "" if (namedGraph is None) else namedGraph
+        self.endpoint = "localhost:8890/sparql" if (endpoint is None) else endpoint
+        self.ressourceIRI = "http://www.example.org/a" if (ressourceIRI is None) else ressourceIRI
+        self.namedGraph = "http://www.example.org/graph" if (namedGraph is None) else namedGraph
 
         counter = 0
         for nodeShape in nodeShapes:
