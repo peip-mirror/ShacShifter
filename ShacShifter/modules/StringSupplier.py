@@ -131,7 +131,7 @@ function sendData(form){
                 "INSERT DATA {" + triples + "}";
     }
     else {
-        query = "DELETE { GRAPH <" + form.namedGraph.value.trim() + ">  {?s ?p ?o}} WHERE { GRAPH <" + form.namedGraph.value.trim() + "> {"?s ?p ?o . FILTER (sameTerm(?s, <" + form.ressourceIRI.value.trim() + ">))"}};" +
+        query = "DELETE { GRAPH <" + form.namedGraph.value.trim() + ">  {?s ?p ?o}} WHERE { GRAPH <" + form.namedGraph.value.trim() + "> {?s ?p ?o . FILTER (sameTerm(?s, <" + form.ressourceIRI.value.trim() + ">))}};" +
                 "INSERT DATA { GRAPH <" + form.namedGraph.value.trim() + "> {" + triples + "}}";
     }
     var xhttp;
