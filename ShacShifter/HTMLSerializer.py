@@ -234,7 +234,7 @@ class HTMLSerializer:
         def addFormItems(nodeShape):
             """Check Propertey Shapes to fill the templates."""
             formItems = []
-            for propertyShape in nodeShape.properties:
+            for propertyShape in sorted(nodeShape.properties, key=lambda x: x.order, reverse=False):
                 formItem = self.getFormItem(propertyShape, nodeShape.nodeKind)
                 if formItem is not None:
                     formItems.append(formItem)
