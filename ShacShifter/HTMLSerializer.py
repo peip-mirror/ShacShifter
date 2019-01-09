@@ -91,7 +91,10 @@ class HTMLFormTextItem(HTMLFormTemplate):
             self.datatype)
         disableChoice = 'disabled' if self.datatype != '' else ''
         counter = 1
-        while counter <= self.cardinality['pref']:
+        minFields = self.cardinality['pref']
+        if self.cardinality['min'] > 0:
+            minFields = self.cardinality['min']
+        while counter <= minFields:
             if maxSet and counter >= self.cardinality['max'] + 1:
                 break
 
