@@ -127,11 +127,11 @@ function sendData(form){
         }
     }
     if(form.namedGraph.value === "") {
-        query = "DELETE { ?s ?p ?o} WHERE { ?s ?p ?o . FILTER (sameTerm(?s, <" + form.ressourceIRI.value.trim() + ">))}" +
+        query = "DELETE { <" + form.ressourceIRI.value.trim() + "> ?p ?o} WHERE { <" + form.ressourceIRI.value.trim() + "> ?p ?o . }" +
                 "INSERT DATA {" + triples + "}";
     }
     else {
-        query = "DELETE { GRAPH <" + form.namedGraph.value.trim() + ">  {?s ?p ?o}} WHERE { GRAPH <" + form.namedGraph.value.trim() + "> {"?s ?p ?o . FILTER (sameTerm(?s, <" + form.ressourceIRI.value.trim() + ">))"}};" +
+        query = "DELETE { GRAPH <" + form.namedGraph.value.trim() + ">  {<" + form.ressourceIRI.value.trim() + "> ?p ?o}} WHERE { GRAPH <" + form.namedGraph.value.trim() + "> {<" + form.ressourceIRI.value.trim() + "> ?p ?o . }};" +
                 "INSERT DATA { GRAPH <" + form.namedGraph.value.trim() + "> {" + triples + "}}";
     }
     var xhttp;
