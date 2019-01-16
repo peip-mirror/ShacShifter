@@ -13,7 +13,7 @@ Graph (if empty equals http://example/Graph#) <br>
 <input type="text" name="namedGraph" value="{}"><br>"""
 
     submit = """<br>
-<input type="button" onclick="sendData(this.form)" value="Submit">
+<input type="button" id="submitbutton" onclick="sendData(this.form)" value="Submit" disabled>
 </form>"""
 
     script = """
@@ -60,9 +60,9 @@ function textfieldAdd(id, label) {
     e.setAttribute('id', id + counter.toString());
     d = [
     '%LABEL%:<br>',
-    '<input type="text" name="%ID%">',
-    '<input type="radio" name="%ID%radio" %CHOICE% value="iri" %CHECKED1%>IRI',
-    '<input type="radio" name="%ID%radio" %CHOICE% value="literal" %CHECKED2%>Literal',
+    '<input type="text" name="%ID%" onkeyup="checkValidity(this.parentElement)">',
+    '<input type="radio" name="%ID%radio" %CHOICE% value="iri" onclick="checkValidity(this.parentElement)" %CHECKED1%>IRI',
+    '<input type="radio" name="%ID%radio" %CHOICE% value="literal" onclick="checkValidity(this.parentElement)" %CHECKED2%>Literal',
     '<button type="button"',
     'onclick="textfieldDel(\\'%BID%\\', this.parentElement)">-</button>',
     '<br>'].join('\\n');
@@ -70,6 +70,7 @@ function textfieldAdd(id, label) {
     return replacements[all] || all;});
     e.innerHTML = d;
     ancestor.appendChild(e);
+    checkValidity(e);
 }
 
 function textfieldDel(id, delDiv){
@@ -150,14 +151,64 @@ function sendData(form){
 function resultPresentation(result){
     alert(result);
 }
+
+function checkValidity(subDiv){
+    if(subDiv.children[2].checked) {
+        var objectURI = new URI(subDiv.children[1].value.trim())
+        if(!(objectURI.is("url") || objectURI.is("urn"))){
+            subDiv.children[1].backgroundColor = "red"
+            subDiv.dataset.correct = ""
+        }
+        else{
+            subDiv.children[1].backgroundColor = "white"
+            subDiv.dataset.correct = "correct"
+        }
+    }
+    else {
+        //future check for string types, potentially string length etc etc
+        subDiv.children[1].backgroundColor = "white"
+        subDiv.dataset.correct = "correct"
+    }
+    checkMainDivValidity(subDiv.parentElement)
+}
+
+function checkMainDivValidity(mainDiv){
+    var subDivs = mainDiv.getElementsByTagName("div"),
+    allSDivsCorrect = true;
+    for(var i = 0; i < subDivs.length; i++) {
+        if(subDivs[i].dataset.correct == "") {
+            allSDivsCorrect = false;
+        }
+    }
+    if(allSDivsCorrect){
+        mainDiv.dataset.correct = "correct";
+    }
+    checkFormValidity(mainDiv.parentElement);
+}
+
+function checkFormValidity(form){
+    var mainDivs = form.getElementsByTagName('div'),
+    allMDivsCorrect = true;
+    for (var i = 0; i < mainDivs.length; i++) {
+        if(mainDivs[i].dataset.correct == "") {
+            allMDivsCorrect = false;
+        }
+    }
+    if(allMDivsCorrect){
+        document.getElementById("submitbutton").disabled = false
+    }
+    else{
+        document.getElementById("submitbutton").disabled = true
+    }
+}
 </script>"""
 
-    propertyMainDiv = """<div id="{}" data-min="{}" data-max="{}" data-type="{}">"""
+    propertyMainDiv = """<div id="{}" data-min="{}" data-max="{}" data-type="{}" data-correct="">"""
 
-    propertySubDiv = """<div id="{id}">{0}:<br>
-<input type="text" name="{id}">
-<input type="radio" name="{id}radio" {choice} value="iri" {1}>IRI
-<input type="radio" name="{id}radio" {choice} value="literal" {2}>Literal
+    propertySubDiv = """<div id="{id}" data-correct="">{0}:<br>
+<input type="text" name="{id}" onkeyup="checkValidity(this.parentElement)">
+<input type="radio" name="{id}radio" {choice} value="iri" onclick="checkValidity(this.parentElement)" {1}>IRI
+<input type="radio" name="{id}radio" {choice} value="literal" onclick="checkValidity(this.parentElement)" {2}>Literal
 <button type="button" onclick="textfieldDel('{3}', this.parentElement)">-</button>
 <br>
 </div>"""
