@@ -9,7 +9,7 @@ SPARQL Endpoint <br>
 <input type="text" name="endpoint" value="{}"><br>
 Ressource IRI <br>
 <input type="text" name="ressourceIRI" value="{}"><br>
-Graph (if empty equals http://example/Graph#) <br>
+Graph <br>
 <input type="text" name="namedGraph" value="{}"><br>"""
 
     submit = """<br>
@@ -211,15 +211,15 @@ function checkCompleteValidity(form){
     propertyMainDiv = """<div id="{}" data-min="{}" data-max="{}" data-type="{}" data-correct="">"""
 
     propertySubDiv = """<div id="{id}" data-correct="">{0}:<br>
-<input type="text" name="{id}" onkeyup="checkFormValidity(this.parentElement)">
+<input type="text" name="{id}" onkeyup="checkFormValidity(this.parentElement)" style="background:red">
 <input type="radio" name="{id}radio" {choice} value="iri" onclick="checkFormValidity(this.parentElement)" {1}>IRI
-<input type="radio" name="{id}radio" {choice} value="literal" onclick="checkFormValidity(this.parentElement)" {2}>Literal
-<button type="button" onclick="textfieldDel('{3}', this.parentElement)">-</button>
+<input type="radio" name="{id}radio" {choice} value="literal" onclick="checkFormValidity(this.parentElement)" {2}>Literal({3})
+<button type="button" onclick="textfieldDel('{4}', this.parentElement)">-</button>
 <br>
 </div>"""
 
     propertyMainDivClose = """</div>
-<button type="button" onclick="textfieldAdd('{}', '{}')">+</button>"""
+<button type="button" onclick="textfieldAdd('{}', '{}')">+ {}{}</button>"""
 
     choiceInput = """<input type="radio" name="{}" value="{}"> {}<br>"""
 

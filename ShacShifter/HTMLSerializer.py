@@ -100,10 +100,12 @@ class HTMLFormTextItem(HTMLFormTemplate):
 
             plainHTML += StringSupplier().propertySubDiv.format(
                 self.label, 'checked' if not disableChoice else '',
-                'checked' if disableChoice else '',
+                'checked' if disableChoice else '', self.datatype,
                 self.id, id=(self.id + str(counter)), choice=disableChoice)
             counter += 1
-        plainHTML += StringSupplier().propertyMainDivClose.format(self.id, self.label)
+        nmin = ('min:' + str(self.cardinality['min']) + ' ') if self.cardinality['min'] else ""
+        nmax = ('max:' + str(self.cardinality['max'])) if maxSet else ''
+        plainHTML += StringSupplier().propertyMainDivClose.format(self.id, self.label, nmin, nmax)
         return plainHTML
 
 
