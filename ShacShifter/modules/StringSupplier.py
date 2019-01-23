@@ -60,9 +60,9 @@ function textfieldAdd(id, label) {
     e.setAttribute('id', id + counter.toString());
     d = [
     '%LABEL%:<br>',
-    '<input type="text" name="%ID%" onkeyup="checkValidity(this.parentElement)">',
-    '<input type="radio" name="%ID%radio" %CHOICE% value="iri" onclick="checkValidity(this.parentElement)" %CHECKED1%>IRI',
-    '<input type="radio" name="%ID%radio" %CHOICE% value="literal" onclick="checkValidity(this.parentElement)" %CHECKED2%>Literal',
+    '<input type="text" name="%ID%" onkeyup="checkFormValidity(this.parentElement)">',
+    '<input type="radio" name="%ID%radio" %CHOICE% value="iri" onclick="checkFormValidity(this.parentElement)" %CHECKED1%>IRI',
+    '<input type="radio" name="%ID%radio" %CHOICE% value="literal" onclick="checkFormValidity(this.parentElement)" %CHECKED2%>Literal',
     '<button type="button"',
     'onclick="textfieldDel(\\'%BID%\\', this.parentElement)">-</button>',
     '<br>'].join('\\n');
@@ -70,7 +70,7 @@ function textfieldAdd(id, label) {
     return replacements[all] || all;});
     e.innerHTML = d;
     ancestor.appendChild(e);
-    checkValidity(e);
+    checkFormValidity(e);
 }
 
 function textfieldDel(id, delDiv){
@@ -83,6 +83,7 @@ function textfieldDel(id, delDiv){
     }
     ancestor.removeChild(delDiv);
     fixIdValues(id)
+    checkMainDivValidity(ancestor)
 }
 
 function fixIdValues(id){
@@ -152,21 +153,25 @@ function resultPresentation(result){
     alert(result);
 }
 
-function checkValidity(subDiv){
+function checkFormValidity(subDiv){
     if(subDiv.children[2].checked) {
-        var objectURI = new URI(subDiv.children[1].value.trim())
-        if(!(objectURI.is("url") || objectURI.is("urn"))){
-            subDiv.children[1].backgroundColor = "red"
+        var objectUri = new URI(subDiv.children[1].value)
+        if(!((objectUri.is("url") || objectUri.is("urn")) && objectUri.is("absolute"))){
+            subDiv.children[1].style.background = "red"
             subDiv.dataset.correct = ""
         }
         else{
-            subDiv.children[1].backgroundColor = "white"
+            subDiv.children[1].style.background = "white"
             subDiv.dataset.correct = "correct"
         }
     }
+    else if(subDiv.children[1].value == ""){
+        subDiv.children[1].style.background = "red"
+        subDiv.dataset.correct = ""
+    }
     else {
         //future check for string types, potentially string length etc etc
-        subDiv.children[1].backgroundColor = "white"
+        subDiv.children[1].style.background = "white"
         subDiv.dataset.correct = "correct"
     }
     checkMainDivValidity(subDiv.parentElement)
@@ -183,10 +188,10 @@ function checkMainDivValidity(mainDiv){
     if(allSDivsCorrect){
         mainDiv.dataset.correct = "correct";
     }
-    checkFormValidity(mainDiv.parentElement);
+    checkCompleteValidity(mainDiv.parentElement);
 }
 
-function checkFormValidity(form){
+function checkCompleteValidity(form){
     var mainDivs = form.getElementsByTagName('div'),
     allMDivsCorrect = true;
     for (var i = 0; i < mainDivs.length; i++) {
@@ -206,9 +211,9 @@ function checkFormValidity(form){
     propertyMainDiv = """<div id="{}" data-min="{}" data-max="{}" data-type="{}" data-correct="">"""
 
     propertySubDiv = """<div id="{id}" data-correct="">{0}:<br>
-<input type="text" name="{id}" onkeyup="checkValidity(this.parentElement)">
-<input type="radio" name="{id}radio" {choice} value="iri" onclick="checkValidity(this.parentElement)" {1}>IRI
-<input type="radio" name="{id}radio" {choice} value="literal" onclick="checkValidity(this.parentElement)" {2}>Literal
+<input type="text" name="{id}" onkeyup="checkFormValidity(this.parentElement)">
+<input type="radio" name="{id}radio" {choice} value="iri" onclick="checkFormValidity(this.parentElement)" {1}>IRI
+<input type="radio" name="{id}radio" {choice} value="literal" onclick="checkFormValidity(this.parentElement)" {2}>Literal
 <button type="button" onclick="textfieldDel('{3}', this.parentElement)">-</button>
 <br>
 </div>"""
