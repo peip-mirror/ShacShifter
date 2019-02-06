@@ -233,10 +233,34 @@ class HTMLSerializer:
                 label = 'Edit: '', '.join(nodeShape.targetSubjectsOf)
             return label
 
+        def sortPropertyShapes(nodeShape):
+            groups = list()
+            groupedShapes = list()
+            for propertyShape in nodeShape.properties:
+                if propertyShape.isSet['group'] and propertyShape.group.isSet['order']:
+                    if propertyShape.group.order not in groups:
+                        groups.append(propertyShape.group.order)
+                else:
+                    if -1 not in groups:
+                        groups.append(-1)
+            groups.sort()
+            for group in groups:
+                shapes = list()
+                for propertyShape in nodeShape.properties:
+                    if propertyShape.isSet['group'] and propertyShape.group.isSet['order']:
+                        if propertyShape.group.order == group:
+                            print(propertyShape.order)
+                            shapes.append(propertyShape)
+                    else:
+                        if group == -1:
+                            shapes.append(propertyShape)
+                groupedShapes.append(sorted(shapes, key=lambda x: x.order, reverse=False))
+            return [y for x in groupedShapes for y in x]
+
         def addFormItems(nodeShape):
             """Check Propertey Shapes to fill the templates."""
             formItems = []
-            for propertyShape in sorted(nodeShape.properties, key=lambda x: x.order, reverse=False):
+            for propertyShape in sortPropertyShapes(nodeShape):
                 formItem = self.getFormItem(propertyShape, nodeShape.nodeKind)
                 if formItem is not None:
                     formItems.append(formItem)
