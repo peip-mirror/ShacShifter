@@ -213,7 +213,7 @@ function checkCompleteValidity(form){
     propertySubDiv = """<div id="{id}" data-correct="">{0}:<br>
 <input type="text" name="{id}" onkeyup="checkFormValidity(this.parentElement)" style="background:red">
 <input type="radio" name="{id}radio" {choice} value="iri" onclick="checkFormValidity(this.parentElement)" {1}>IRI
-<input type="radio" name="{id}radio" {choice} value="literal" onclick="checkFormValidity(this.parentElement)" {2}>Literal({3})
+<input type="radio" name="{id}radio" {choice} value="literal" onclick="checkFormValidity(this.parentElement)" {2}>Literal{3}
 <button type="button" onclick="textfieldDel('{4}', this.parentElement)">-</button>
 <br>
 </div>"""
