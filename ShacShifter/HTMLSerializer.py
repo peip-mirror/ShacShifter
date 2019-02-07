@@ -98,10 +98,11 @@ class HTMLFormTextItem(HTMLFormTemplate):
             if maxSet and counter >= self.cardinality['max'] + 1:
                 break
 
+            datatypeLink = StringSupplier().datatypeLink.format(datatype=self.datatype)
             plainHTML += StringSupplier().propertySubDiv.format(
                 self.label, 'checked' if not disableChoice else '',
                 'checked' if disableChoice else '',
-                ' (' + self.datatype + ')' if self.datatype != '' else '',
+                datatypeLink if self.datatype != '' else '',
                 self.id, id=(self.id + str(counter)), choice=disableChoice)
             counter += 1
         nmin = ('min:' + str(self.cardinality['min']) + ' ') if self.cardinality['min'] else ""

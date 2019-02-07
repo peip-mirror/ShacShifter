@@ -224,3 +224,5 @@ function checkCompleteValidity(form){
     choiceInput = """<input type="radio" name="{}" value="{}"> {}<br>"""
 
     jqueryCDN = """<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>"""
+
+    datatypeLink = ' (<a href="{datatype}" target="_blank">{datatype}</a>)'
