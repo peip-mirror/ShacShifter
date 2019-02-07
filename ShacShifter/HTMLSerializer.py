@@ -100,7 +100,8 @@ class HTMLFormTextItem(HTMLFormTemplate):
 
             plainHTML += StringSupplier().propertySubDiv.format(
                 self.label, 'checked' if not disableChoice else '',
-                'checked' if disableChoice else '', '(' + self.datatype + ')',
+                'checked' if disableChoice else '',
+                ' (' + self.datatype + ')' if self.datatype != '' else '',
                 self.id, id=(self.id + str(counter)), choice=disableChoice)
             counter += 1
         nmin = ('min:' + str(self.cardinality['min']) + ' ') if self.cardinality['min'] else ""
